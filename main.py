@@ -7,6 +7,7 @@ from matplotlib.dates import DateFormatter
 import numpy as np
 from scipy import stats
 import math as m
+import random
 
 def getIndexPrice(ticker: str, country: str, startDate: str, endDate: str) -> pandas.DataFrame:
     """
@@ -17,11 +18,23 @@ def getIndexPrice(ticker: str, country: str, startDate: str, endDate: str) -> pa
     """
     return(investpy.indices.get_index_historical_data(index = ticker, country=country, from_date=startDate, to_date=endDate))
 
+def moneteCarlo(initalPrice: float, iterations: int, standardDeviation: float) -> float:
+    """
+    How else do I do
+
+    Crucially, Monte Carlo simulations ignore everything that is not built into the price movement (macro trends, company leadership, hype, cyclical factors); in other words, they assume perfectly efficient markets.
+    """
+    price = initalPrice
+    for _ in range(iterations):
+        price += stats.norm.cdf(random.random()) * standardDeviation
+    return(price)
+
 def valueELI(issuePrice: float, intialFixingDate: date, finalFixingDate: date, finalRedemptionDate: date) -> float:
     return(0)
 
 
 if __name__ == "__main__":
+    random.seed(2021) # set seed for random number generator for monte carlo
 
     # Get past market prices MILAN
     FTSEMIB = getIndexPrice(ticker="FTSE MIB", country="Italy", startDate="24/01/2011", endDate="24/01/2021")
@@ -80,6 +93,7 @@ if __name__ == "__main__":
 
 
 
+
 """ 
 Sources:
 https://pandas.pydata.org/pandas-docs/stable/reference/api/pandas.DataFrame.html
@@ -89,5 +103,7 @@ https://www.kite.com/python/answers/how-to-plot-a-line-of-best-fit-in-python
 https://stackoverflow.com/questions/17638137/curve-fitting-to-a-time-series-in-the-format-datetime
 https://docs.scipy.org/doc/scipy/reference/generated/scipy.stats.linregress.html
 https://xplaind.com/268982/portfolio-standard-deviation
+https://stackoverflow.com/questions/38828622/calculating-the-stock-price-volatility-from-a-3-columns-csv
+https://www.investopedia.com/terms/m/montecarlosimulation.asp
 """
 
