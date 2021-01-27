@@ -36,20 +36,28 @@ def valueELI(issuePrice: float, intialFixingDate: date, finalFixingDate: date, f
 if __name__ == "__main__":
     random.seed(2021) # set seed for random number generator for monte carlo
 
+    global FTSEMIB
+    global HSCEI
+    global NDX 
+
+    names = ["FTSE MIB", "Hang Seng CEI", "Nasdaq 100"]
+
     # Get past market prices MILAN
     FTSEMIB = getIndexPrice(ticker="FTSE MIB", country="Italy", startDate="24/01/2011", endDate="24/01/2021")
     HSCEI = getIndexPrice(ticker="Hang Seng CEI", country="Hong Kong", startDate="24/01/2011", endDate="24/01/2021")
-    NDX = getIndexPrice(ticker="Nasdaq 100 ", country="United States", startDate="24/01/2011", endDate="24/01/2021")
+    NDX = getIndexPrice(ticker="Nasdaq 100", country="United States", startDate="24/01/2011", endDate="24/01/2021")
+
+    indexes = [FTSEMIB, HSCEI, NDX]
 
     # Convert price data to list because I know how to use lists 
-    FTSEMIB_priceList = list(FTSEMIB["Open"])
-    HSCEI_priceList = list(HSCEI["Open"])
-    NDX_priceList = list(NDX["Open"])
+    priceLists = []
+    for index in indexes:
+        priceLists.append(list(index["Open"]))
 
     # Get dates for each index
-    FTSEMIB_dates = list(pandas.DatetimeIndex.to_pydatetime(FTSEMIB.index))
-    HSCEI_dates = list(pandas.DatetimeIndex.to_pydatetime(HSCEI.index))
-    NDX_dates = list(pandas.DatetimeIndex.to_pydatetime(NDX.index))
+    dates = []
+    for index in indexes:
+        dates.append(list(pandas.DatetimeIndex.to_pydatetime(index.index))) # poor naming...
 
     # Plot FTSEMIB for visual context 
     fig, ax = plt.subplots()
@@ -59,7 +67,7 @@ if __name__ == "__main__":
     months = mdates.MonthLocator()  # every month
     years_fmt = mdates.DateFormatter('%Y')
 
-    plt.plot_date(FTSEMIB_dates, FTSEMIB_priceList, 'b-')
+    plt.plot_date(dates[1], priceLists[1], 'b-')
     formatter = DateFormatter('%m/%d/%y')
     ax.xaxis.set_major_locator(years)
     ax.xaxis.set_major_formatter(years_fmt)
@@ -67,29 +75,29 @@ if __name__ == "__main__":
     ax.grid(True)
 
     # Make best fit line 
-    FTSEMIB_xAxis = range(0, len(FTSEMIB_dates)) # We need this to calculate line of best line 
-    FTSEMIB_m, FTSEMIB_b, FTSEMIB_r_value, FTSEMIB_p_value, FTSEMIB_std_err = stats.linregress(FTSEMIB_xAxis, FTSEMIB_priceList)
-    plt.plot(FTSEMIB_dates, FTSEMIB_m * FTSEMIB_xAxis + FTSEMIB_b)
+    xAxies = []
+    statistics = []
+    for i in range(len(indexes)):
+        xAxies.append(range(0, len(dates[i])))
+        slope, b, r_value, p_value, std_err = stats.linregress(xAxies[i], priceLists[i])
+        statistics.append([slope, b, r_value, p_value, std_err])
+
+    # statistics[1][0] is slope
+    # statistics[1][0] is b
+    plt.plot(dates[1], statistics[1][0] * xAxies[1] + statistics[1][1])
     
-    FTSEMIB_std_dev = FTSEMIB_std_err * m.sqrt(len(FTSEMIB_dates))
+    standardDeviations = []
+    for i in range(len(indexes)):
+        standardDeviations.append(statistics[i][4])
 
     # Actually plot
-    #fig.autofmt_xdate()
-    #plt.show()
+    fig.autofmt_xdate()
+    plt.show()
 
-    # Calculate Standard Deviation of the remaining two assets in portfolio
-    HSCEI_xAxis = range(0, len(HSCEI_dates))
-    HSCEI_m, HSCEI_b, HSCEI_r_value, HSCEI_p_value, HSCEI_std_err = stats.linregress(HSCEI_xAxis, HSCEI_priceList)
-    HSCEI_std_dev = HSCEI_std_err * m.sqrt(len(HSCEI_dates))
-
-    NDX_xAxis = range(0, len(NDX_dates))
-    NDX_m, NDX_b, NDX_r_value, NDX_p_value, NDX_std_err = stats.linregress(NDX_xAxis, NDX_priceList)
-    NDX_std_dev = NDX_std_err * m.sqrt(len(NDX_dates))
 
     # Print some stats for now
-    print("FTSEMIB Slope: {}, FTSEMIB Standard Deviation: {}".format(FTSEMIB_m, FTSEMIB_std_dev))
-    print("HSCEI Slope: {}, HSCEI Standard Deviation: {}".format(HSCEI_m, HSCEI_std_dev))
-    print("NDX Slope: {}, NDX Standard Deviation: {}".format(NDX_m, NDX_std_dev))
+    for i in range(len(names)):
+        print("{} Slope: {}, {} Standard Deviation: {}".format(names[i], statistics[i][0], names[i], standardDeviations[i]))
 
 
 
