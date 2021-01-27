@@ -18,16 +18,48 @@ def getIndexPrice(ticker: str, country: str, startDate: str, endDate: str) -> pa
     """
     return(investpy.indices.get_index_historical_data(index = ticker, country=country, from_date=startDate, to_date=endDate))
 
-def moneteCarlo(initalPrice: float, iterations: int, standardDeviation: float) -> float:
+def oneTSeries(days:int, count: int, daily_vol: int, price: int, tseries):
+    "Run a single simulation and returns one simulation 'run'."
+    for day in range(days):
+        if count==(days-1):
+            break
+        price=tseries[count]*(1+np.random.normal(0,daily_vol))
+        tseries.append(price)
+        count+=1
+        
+    return tseries
+
+def monteCarlo(iterations: int, days: int, underlying):
     """
-    How else do I do
+    Return a monte carlo simulation dataframe of one underlying
+    Example: monteCarlo(500, 252, FTSEMIB)
+    
+    Adapted from https://www.youtube.com/watch?v=_T0l015ecK4
 
     Crucially, Monte Carlo simulations ignore everything that is not built into the price movement (macro trends, company leadership, hype, cyclical factors); in other words, they assume perfectly efficient markets.
     """
-    price = initalPrice
-    for _ in range(iterations):
-        price += stats.norm.cdf(random.random()) * standardDeviation
-    return(price)
+    ul=underlying['Close']
+    
+
+    ul_last_price = ul.iloc[-1]
+    
+    ulreturns = ul.pct_change()
+
+    ul_price_df=pandas.DataFrame()
+    
+    for sim in range(iterations):
+        ul_daily_vol = ulreturns.std()
+        ul_tseries = []
+        
+        ulprice = ul_last_price*(1+np.random.normal(0, ul_daily_vol))
+        ul_tseries.append(ulprice)
+        
+        "run a single simulation"
+        ul_tseries=oneTSeries(days, 0, ul_daily_vol, ulprice, ul_tseries)
+            
+        ul_price_df[sim]=(ul_tseries)
+        
+    return ul_price_df
 
 def valueELI(issuePrice: float, intialFixingDate: date, finalFixingDate: date, finalRedemptionDate: date) -> float:
     return(0)
@@ -99,8 +131,13 @@ if __name__ == "__main__":
     for i in range(len(names)):
         print("{} Slope: {}, {} Standard Deviation: {}".format(names[i], statistics[i][0], names[i], standardDeviations[i]))
 
-
-
+    #Example Test
+    f=monteCarlo(500, 252, HSCEI)
+    
+    
+    fig=plt.figure()
+    plt.plot(f)
+    plt.show()
 
 """ 
 Sources:
