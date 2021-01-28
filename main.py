@@ -12,6 +12,7 @@ import time
 import random
 import numpy as np
 import pandas_market_calendars as mcal
+from simulatedELI import *
 
 def getFinalRedemption(price1: float, price2: float, price3: float):
     
@@ -40,9 +41,6 @@ def getIndexPrice(ticker: str, country: str, startDate: str, endDate: str) -> pa
     getIndexPrice(ticker="Nasdaq 100 ", country="United States", startDate="24/01/2011", endDate="24/01/2021")
     """
     return(investpy.indices.get_index_historical_data(index = ticker, country=country, from_date=startDate, to_date=endDate))
-
-def valueELI(issuePrice: float, intialFixingDate: date, finalFixingDate: date, finalRedemptionDate: date) -> float:
-    return(0)
 
 def oneTSeries(days:int, count: int, daily_vol: int, price: int, tseries):
     "Run a single simulation and returns one simulation 'run'."
@@ -132,38 +130,29 @@ def notepath(ul1, ul2, ul3, payoutperiod):
             timeinpayoutperiod-=1
     return(payoutlist)
 
-def earlyRedeem(days: list, priceHistories: list, tickers: list, interestRate: float, underlying: pandas.DataFrame, startDate: pandas.DatetimeIndex) -> float:
+def allTriggered(ELIs: list, redemptionDate: pandas.DatetimeIndex) ->  bool:
+    allTriggered = False
+    for ELI in ELIs:
+        if not(redemptionDate in ELI.triggerRedemptionDates):
+            return(False)
+    return(True)
+            
+
+
+def earlyRedeem(ELIs: list, underlying: pandas.DataFrame, startDate: pandas.DatetimeIndex, observationDates: list, redemptionDates: list) -> pandas.DatetimeIndex:
     """
-    Pruce histories is a 2d list. It stores the the price history of each respective tickers
-    tickers is a list of strings
+    Returns the earliest trigger date (an index not an actual date)
     """
-    intialValues = []
-    for index in priceHistories:
-        intialValues.append(index[0])
-
-    triggerObservationDays = pandas.Series(["7/7/2020", "10/7/2020", "1/7/2021", "4/7/2021", "7/7/2021", "10/7/2021", "1/7/2022", "4/7/2022", "7/7/2022", "10/7/2022"])
-
-    dayDifferences = []
-    for ticker in tickers:
-        calendar = mcal.get_calendar(ticker)
-        dayDifferencesForTicker = []
-        for day in triggerObservationDays:
-            dates = calendar.schedule(startDate, day)
-            dayDifference = len(dates)
-            dayDifferencesForTicker.append(dayDifference)
-        dayDifferences.append(dayDifferencesForTicker)
-
-    for i in range(len(priceHistories)):
-        for j in range(len(intialValues)): 
-            priceHistory[i][dayDifference] >= intialValues[i] * 0.97:
-
-        
-
-    triggerRedemptionDays = pandas.Series(["7/14/2020", "10/14/2020", "1/14/2021", "4/14/2021", "7/14/2021", "10/14/2021", "1/14/2022", "4/14/2022", "7/14/2022", "10/14/2022"])
-
-
-
-    return()
+    for ELI in ELIs:
+        ELI.setTriggerObservationDates(observationDates)
+        ELI.setObservationDates(redemptionDates)
+        ELI.generateTriggerIndexes(startDate)
+        ELI.getTriggerDates()
+    
+    for redemptionDate in ELIs[0].triggerRedemptionDates:
+        if allTriggered(ELIs, redemptionDate):
+            return(redemptionDate)
+    return(-1)
 
 def overrideDates(monteCarloSimulation: pandas.DataFrame, ticker: str, startDate: str, endDate: str) -> pandas.DataFrame:
     """
@@ -188,6 +177,9 @@ if __name__ == "__main__":
     end="16/03/2020"
     names = ["FTSE MIB", "Hang Seng CEI", "Nasdaq 100"]
     calendarTickers = ["", "", ""]
+    observationDates = ["7/7/2020", "10/7/2020", "1/7/2021", "4/7/2021", "7/7/2021", "10/7/2021", "1/7/2022", "4/7/2022", "7/7/2022", "10/7/2022"]
+    redemptionDates = ["7/14/2020", "10/14/2020", "1/14/2021", "4/14/2021", "7/14/2021", "10/14/2021", "1/14/2022", "4/14/2022", "7/14/2022", "10/14/2022"]
+    interestRate = 0.068
 
     # Get past market prices MILAN
     FTSEMIB = getIndexPrice(ticker="FTSE MIB", country="Italy", startDate=start, endDate=end)
