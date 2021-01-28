@@ -5,7 +5,6 @@ from matplotlib import pyplot as plt
 import matplotlib.dates as mdates
 from matplotlib.dates import DateFormatter
 import numpy as np
-from pandas.core.frame import DataFrame
 from scipy import stats
 import math as m
 import time
@@ -33,6 +32,7 @@ def getFinalRedemption(price1: float, price2: float, price3: float):
         return worstPerformance*finalLevel
 
 
+
 def getIndexPrice(ticker: str, country: str, startDate: str, endDate: str) -> pandas.DataFrame:
     """
     Examples: 
@@ -53,7 +53,7 @@ def oneTSeries(days:int, count: int, daily_vol: int, price: int, tseries):
         
     return tseries
 
-def monteCarlo(iterations: int, days: int, underlying: pandas.DataFrame):
+def monteCarlo(iterations: int, days: int, underlying):
     """
     Return a monte carlo simulation dataframe of one underlying
     Example: monteCarlo(500, 252, FTSEMIB)
@@ -93,7 +93,7 @@ def daysAfter(start, end):
 
 
 def notepath(ul1, ul2, ul3, payoutperiod):
-    """returns in the form of simulation, payout period, n/N
+    """returns in the form of [simulation, payout period, n/N, underlying1 payout, underlying2 payout, underlying 3 payout]
     
         accepts monteCarlo simulations and a payout period in the form of days
         within payout period. ex. [93,90,91,92...]
@@ -112,7 +112,12 @@ def notepath(ul1, ul2, ul3, payoutperiod):
         done=False
         for day in range(len(ul1[sim])): #for every day in sim x
             if timeinpayoutperiod==0: #end of the period
-                noverN=[sim,periodcounter,n/N]
+                if periodcounter==0:
+                    n=n+46 #hard code the fraction of days before March 16, 2020
+                    N=N+47
+                    noverN=[sim,periodcounter,n/N,par1*.068*n/N,par2*.068*n/N,par3*.068*n/N]
+                else:
+                    noverN=[sim,periodcounter,n/N,par1*.068*n/N,par2*.068*n/N,par3*.068*n/N] #appended information (sim, period#, n/N, total payout)
                 payoutlist.append(noverN)
                 periodcounter+=1 #go to next period
                 if periodcounter>len(payoutperiod)-1: #go to next simulation if we are at end of period
@@ -129,7 +134,7 @@ def notepath(ul1, ul2, ul3, payoutperiod):
             N+=1
             timeinpayoutperiod-=1
     return(payoutlist)
-
+    
 def allTriggered(ELIs: list, redemptionDate: pandas.DatetimeIndex) ->  bool:
     allTriggered = False
     for ELI in ELIs:
@@ -242,11 +247,14 @@ if __name__ == "__main__":
     f=monteCarlo(500, 252, HSCEI)
     
     
+
+    daynum=1030
     fig=plt.figure()
     plt.plot(f)
     plt.show()
 
     daynum=1029
+
     simnum=10
     
     payoutperiod=[daysAfter('3/16/2020', '4/7/2020'), daysAfter('4/7/2020', '7/7/2020'),daysAfter('7/7/2020', '10/7/2020'),daysAfter('10/7/2020', '1/7/2021'),daysAfter('1/7/2021', '4/7/2021'),daysAfter('4/7/2021', '7/7/2021'),daysAfter('7/7/2021', '10/7/2021'),daysAfter('10/7/2021', '1/7/2022'),daysAfter('1/7/2022', '4/7/2022'),daysAfter('4/7/2022', '7/7/2022'),daysAfter('7/7/2022', '10/7/2022'),daysAfter('10/7/2022', '1/9/2023')]
@@ -255,7 +263,21 @@ if __name__ == "__main__":
     b=monteCarlo(simnum, daynum, HSCEI)
     c=monteCarlo(simnum, daynum, NDX)
     
-    notepath(a,b,c)
+    notepath(a,b,c,payoutperiod)
+    
+    
+    #find the n from January 8 to March 16 out of N
+    FTSEMIB_pre = list(getIndexPrice(ticker="FTSE MIB", country="Italy", startDate="8/1/2020", endDate="16/3/2020")["Close"])
+    HSCEI_pre = list(getIndexPrice(ticker="Hang Seng CEI", country="Hong Kong", startDate="8/1/2020", endDate="16/3/2020")["Close"])
+    NDX_pre = list(getIndexPrice(ticker="Nasdaq 100 ", country="United States", startDate="8/1/2020", endDate="16/3/2020")["Close"])
+    payoutthreshholdlist=[23723.38*.7,11079.79*.7,8846.449*.7]
+    n=0
+    for i in range(len(min(FTSEMIB_pre,HSCEI_pre,NDX_pre))):
+        daylist=[FTSEMIB_pre[i],HSCEI_pre[i],NDX_pre[i]]
+        n+=all(daylist[x] >= payoutthreshholdlist[x] for x in range(len(daylist)))     
+    print(n)
+    print(len(min(FTSEMIB_pre,HSCEI_pre,NDX_pre)))
+    
     
     
     """fig=plt.figure()
@@ -274,11 +296,5 @@ https://www.kite.com/python/answers/how-to-plot-a-line-of-best-fit-in-python
 https://stackoverflow.com/questions/17638137/curve-fitting-to-a-time-series-in-the-format-datetime
 https://docs.scipy.org/doc/scipy/reference/generated/scipy.stats.linregress.html
 https://xplaind.com/268982/portfolio-standard-deviation
-https://stackoverflow.com/questions/38828622/calculating-the-stock-price-volatility-from-a-3-columns-csv
-https://www.investopedia.com/terms/m/montecarlosimulation.asp
-https://pypi.org/project/pandas-market-calendars/
 """
 
-"""
-Trading days are not the same in each country
-"""
