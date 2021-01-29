@@ -140,7 +140,6 @@ def payoutSinglePeriod(simnum, ul1, ul2, ul3, cal1: str, cal2: str, cal3: str, s
     par2=11079.79
     par3=8846.449
     payoutthresholdlist=[par1*.7,par2*.7,par3*.7]
-    payoutlist=[]
     n=0
     N=0
     while not(all(x == datetime.datetime.strptime(end,'%m/%d/%Y').date() for x in [daterange[0]['market_open'].iloc[0].date(), daterange[1]['market_open'].iloc[0].date(), daterange[2]['market_open'].iloc[0].date()])):
@@ -209,6 +208,28 @@ def payoutPath(simnum:int, ul1, ul2, ul3, pathenddate:str, payoutdates:list, pay
     return([payout1,payout2,payout3])
 
 
+def getTriggerDates(simnum, ul1, ul2, ul3, triggerobsdates:list, triggerpayoutdates:list):
+    triggerthreshold=[23011.6786, 10747.3963, 8581.0555]
+    triggerobsdatelist=[]
+    triggerdateindex=-1
+    for i in triggerobsdates:
+        triggerobsdatelist.append(datetime.datetime.strptime(i,'%m/%d/%Y').date())
+    for i in range(len(triggerobsdatelist)):
+        date=triggerobsdatelist[i]
+        ul1price = ul1[simnum][ul1[ul1['date'] == date].index[0]]
+        ul2price = ul2[simnum][ul2[ul3['date'] == date].index[0]]
+        ul3price = ul3[simnum][ul3[ul3['date'] == date].index[0]]
+        pricelist=[ul1price,ul2price,ul3price]
+        if all(pricelist[x] >= triggerthreshold[x] for x in range(len(pricelist))):
+            triggerdateindex=i
+            break
+    if triggerdateindex==-1:
+        return -1
+    else:
+        return triggerpayoutdates[triggerdateindex]
+    
+
+
 if __name__ == "__main__":
 
     start="24/01/2011"
@@ -227,7 +248,7 @@ if __name__ == "__main__":
 
     
     daynum=1030
-    simnum=10
+    simnum=100
     
     
     a=monteCarlo(simnum,daynum, FTSEMIB)
@@ -238,11 +259,8 @@ if __name__ == "__main__":
     b2=overrideDates(b, 'HKEX', '3/16/2020', '1/7/2023')
     c2=overrideDates(c, 'NYSE', '3/16/2020', '1/7/2023')
     
-    payoutSinglePeriod(5, a2, b2, c2, 'XETR', 'HKEX', 'NYSE', '3/16/2020', '4/7/2020')
-    
-    
     #find the n from January 8 to March 16 out of N
-    FTSEMIB_pre = list(getIndexPrice(ticker="FTSE MIB", country="Italy", startDate="8/1/2020", endDate="16/3/2020")["Close"])
+    """FTSEMIB_pre = list(getIndexPrice(ticker="FTSE MIB", country="Italy", startDate="8/1/2020", endDate="16/3/2020")["Close"])
     HSCEI_pre = list(getIndexPrice(ticker="Hang Seng CEI", country="Hong Kong", startDate="8/1/2020", endDate="16/3/2020")["Close"])
     NDX_pre = list(getIndexPrice(ticker="Nasdaq 100 ", country="United States", startDate="8/1/2020", endDate="16/3/2020")["Close"])
     payoutthreshholdlist=[23723.38*.7,11079.79*.7,8846.449*.7]
@@ -251,13 +269,17 @@ if __name__ == "__main__":
         daylist=[FTSEMIB_pre[i],HSCEI_pre[i],NDX_pre[i]]
         n+=all(daylist[x] >= payoutthreshholdlist[x] for x in range(len(daylist)))     
     print(n)
-    print(len(min(FTSEMIB_pre,HSCEI_pre,NDX_pre)))
+    print(len(min(FTSEMIB_pre,HSCEI_pre,NDX_pre)))"""
     
     
     payoutobsperiod=[['3/16/2020','4/7/2020'], ['4/7/2020','7/7/2020'],['10/7/2020','1/7/2021'],['1/7/2021','4/7/2021'], ['4/7/2021','7/7/2021'],['10/7/2021','1/7/2022'],['1/7/2022','4/7/2022'], ['4/7/2022','7/7/2022'],['10/7/2022','1/9/2023']]
     payoutdates=['4/14/2020','7/14/2020','10/14/2020','1/14/2021','4/14/2021','7/14/2021','10/14/2021','1/14/2022','4/14/2022','7/14/2022','10/14/2022','1/17/2023']
     
-    redeemedDates = [] 
+    triggerobsdates=['7/7/2020','10/7/2020','1/7/2021','4/7/2021','7/7/2021','10/7/2021','1/7/2022','4/7/2022','7/7/2022','10/7/2022']
+    triggerreddates=['7/14/2020','10/14/2020','1/14/2021','4/14/2021','7/14/2021','10/14/2021','1/14/2022','4/14/2022','7/14/2022','10/14/2022']
+    
+    
+    """ redeemedDates = [] 
     for i in range(len(a2.columns) - 1):
         Nanas = []
         Nanas.append(simulatedNana("FTSE MIB", "XETR", "Italy", a2[i]))
@@ -265,20 +287,33 @@ if __name__ == "__main__":
         Nanas.append(simulatedNana("Nasdaq 100", "NYSE", "United States", c2[i]))
 
         redeemedDates.append(earlyRedeem(Nanas, pandas.to_datetime('3/16/2020'), observationDates, redemptionDates))
+        """
+
+    redeemedDates = [] 
+    for i in range(len(a2.columns)-1):
+        redeemedDates.append(getTriggerDates(i, a2, b2, c2, triggerobsdates, triggerreddates))
+    
+    print(redeemedDates)
 
     for i in range(len(redeemedDates)):
         if redeemedDates[i] != -1:
-            print(payoutPath(i, a2, b2, c2, redeemedDates[i], payoutdates, payoutobsperiod))
+            print("TRIGGER", redeemedDates[i], payoutPath(i, a2, b2, c2, redeemedDates[i], payoutdates, payoutobsperiod))
         else:
-            print(getFinalRedemption(a2[i][-1:], b2[i][-1:], c2[i][-1:]))
+            print("FINAL", getFinalRedemption(a2[i][-1:], b2[i][-1:], c2[i][-1:]))
 
 
     #payoutPath(5, a2, b2, c2, '1/7/2021', payoutdates, payoutobsperiod)
     
-    """fig=plt.figure()
-    plt.plot(a)
-    plt.show()"""
-    
+    plotsim=2
+    fig=plt.figure()
+    plt.plot(a2[plotsim])
+    plt.show()
+    fig=plt.figure()
+    plt.plot(b2[plotsim])
+    plt.show()
+    fig=plt.figure()
+    plt.plot(c2[plotsim])
+    plt.show()
     #if you want to see the distribution of final prices
     #plt.hist(b.iloc[-1],bins='auto')
 
