@@ -188,7 +188,6 @@ def payoutPath(simnum:int, ul1, ul2, ul3, pathenddate:str, payoutdates:list, pay
     else:
         return([payout1,payout2,payout3])
 
-
 def getTriggerDates(simnum, ul1, ul2, ul3, triggerobsdates:list, triggerpayoutdates:list):
     """Outputs first trigger date
     """
@@ -217,21 +216,6 @@ if __name__ == "__main__":
 
     start="24/01/2011"
     end="16/03/2020"
-    
-    #find the n from January 8 to March 16 out of N
-    """FTSEMIB_pre = list(getIndexPrice(ticker="FTSE MIB", country="Italy", startDate="8/1/2020", endDate="16/3/2020")["Close"])
-    HSCEI_pre = list(getIndexPrice(ticker="Hang Seng CEI", country="Hong Kong", startDate="8/1/2020", endDate="16/3/2020")["Close"])
-    NDX_pre = list(getIndexPrice(ticker="Nasdaq 100 ", country="United States", startDate="8/1/2020", endDate="16/3/2020")["Close"])
-    payoutthreshholdlist=[23723.38*.7,11079.79*.7,8846.449*.7]
-    n=0
-    for i in range(len(min(FTSEMIB_pre,HSCEI_pre,NDX_pre))):
-        daylist=[FTSEMIB_pre[i],HSCEI_pre[i],NDX_pre[i]]
-        n+=all(daylist[x] >= payoutthreshholdlist[x] for x in range(len(daylist)))     
-    print(n)
-    print(len(min(FTSEMIB_pre,HSCEI_pre,NDX_pre)))"""
-    
-   
-
 
     # Get past market prices MILAN
     
@@ -263,6 +247,7 @@ if __name__ == "__main__":
     redeemedDates = [] 
     for i in range(len(a2.columns)-1):
         redeemedDates.append(getTriggerDates(i, a2, b2, c2, triggerobsdates, triggerreddates))
+
 
     #to see tests being generated
     for i in range(len(redeemedDates)):
@@ -321,6 +306,7 @@ if __name__ == "__main__":
     
     
     plotsim=0
+
     fig=plt.figure()
     plt.plot(a2[plotsim])
     plt.show()
