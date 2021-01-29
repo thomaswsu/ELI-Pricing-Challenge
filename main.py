@@ -200,9 +200,7 @@ def payoutPath(simnum:int, ul1, ul2, ul3, pathenddate:str, payoutdates:list, pay
         payout1+=par1*.068*mult
         payout2+=par2*.068*mult
         payout3+=par3*.068*mult
-        
     return([payout1,payout2,payout3])
-
 
 if __name__ == "__main__":
 
@@ -237,16 +235,16 @@ if __name__ == "__main__":
     
     
     #find the n from January 8 to March 16 out of N
-    FTSEMIB_pre = list(getIndexPrice(ticker="FTSE MIB", country="Italy", startDate="8/1/2020", endDate="16/3/2020")["Close"])
-    HSCEI_pre = list(getIndexPrice(ticker="Hang Seng CEI", country="Hong Kong", startDate="8/1/2020", endDate="16/3/2020")["Close"])
-    NDX_pre = list(getIndexPrice(ticker="Nasdaq 100 ", country="United States", startDate="8/1/2020", endDate="16/3/2020")["Close"])
-    payoutthreshholdlist=[23723.38*.7,11079.79*.7,8846.449*.7]
-    n=0
-    for i in range(len(min(FTSEMIB_pre,HSCEI_pre,NDX_pre))):
-        daylist=[FTSEMIB_pre[i],HSCEI_pre[i],NDX_pre[i]]
-        n+=all(daylist[x] >= payoutthreshholdlist[x] for x in range(len(daylist)))     
-    print(n)
-    print(len(min(FTSEMIB_pre,HSCEI_pre,NDX_pre)))
+   # FTSEMIB_pre = list(getIndexPrice(ticker="FTSE MIB", country="Italy", startDate="8/1/2020", endDate="16/3/2020")["Close"])
+    #HSCEI_pre = list(getIndexPrice(ticker="Hang Seng CEI", country="Hong Kong", startDate="8/1/2020", endDate="16/3/2020")["Close"])
+    #NDX_pre = list(getIndexPrice(ticker="Nasdaq 100 ", country="United States", startDate="8/1/2020", endDate="16/3/2020")["Close"])
+    #payoutthreshholdlist=[23723.38*.7,11079.79*.7,8846.449*.7]
+    #n=0
+    #for i in range(len(min(FTSEMIB_pre,HSCEI_pre,NDX_pre))):
+    #    daylist=[FTSEMIB_pre[i],HSCEI_pre[i],NDX_pre[i]]
+    #    n+=all(daylist[x] >= payoutthreshholdlist[x] for x in range(len(daylist)))     
+    #print(n)
+    #print(len(min(FTSEMIB_pre,HSCEI_pre,NDX_pre)))
     
     
     payoutobsperiod=[['3/16/2020','4/7/2020'], ['4/7/2020','7/7/2020'],['10/7/2020','1/7/2021'],['1/7/2021','4/7/2021'], ['4/7/2021','7/7/2021'],['10/7/2021','1/7/2022'],['1/7/2022','4/7/2022'], ['4/7/2022','7/7/2022'],['10/7/2022','1/9/2023']]
