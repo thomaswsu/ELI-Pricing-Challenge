@@ -210,7 +210,15 @@ def getTriggerDates(simnum, ul1, ul2, ul3, triggerobsdates:list, triggerpayoutda
     else:
         return triggerpayoutdates[triggerdateindex]
     
+def convertHKDtoUSD(payoutlist: list) -> list:
+    for i in range(len(payoutlist)):
+        payoutlist[i] = HKDtoUSD(payoutlist[i])
+    return(payoutlist)
 
+def convertEUROtoUSD(payoutlist: list) -> list:
+    for i in range(len(payoutlist)):
+        payoutlist[i] = EUROtoUSD(payoutlist[i])
+    return(payoutlist)
 
 if __name__ == "__main__":
 
@@ -232,7 +240,7 @@ if __name__ == "__main__":
     triggerreddates=['7/14/2020','10/14/2020','1/14/2021','4/14/2021','7/14/2021','10/14/2021','1/14/2022','4/14/2022','7/14/2022','10/14/2022']
     
     daynum=1030
-    simnum=1000
+    simnum=10
     
     a=monteCarlo(simnum,daynum, FTSEMIB)
     b=monteCarlo(simnum, daynum, HSCEI)
@@ -294,12 +302,11 @@ if __name__ == "__main__":
         payout3list.append(outputlist[simnum][2])
         triggered.append(outputlist[simnum][3])
         abovestrikecountlist.append(outputlist[simnum][4])
-    outputdf['FTSEMIB payout']=payout1list
-    outputdf['HSCEI payout']=payout2list
+    outputdf['FTSEMIB payout']= convertEUROtoUSD(payout1list) 
+    outputdf['HSCEI payout']=convertHKDtoUSD(payout2list) 
     outputdf['NDX payout']=payout3list
     outputdf['Triggered']=triggered
     outputdf['Above Strike Lvl']=abovestrikecountlist
-
             
     safestore=outputdf
     
