@@ -118,12 +118,52 @@ def payoutSinglePeriod(simnum, ul1, ul2, ul3, cal1: str, cal2: str, cal3: str, s
         daterange[0]=daterange[0].iloc[1:]
         daterange[1]=daterange[1].iloc[1:]
         daterange[2]=daterange[2].iloc[1:]
-    print([par1*.068*n/N,par3*.068*n/N,par3*.068*n/N])
-    return(n/N)
+    return([n,N])
 
-def payoutPath(simnum:int, ul1, ul2, ul3, pathenddate:str, payoutdates:list, payoutobslist:list):
+
+def payoutPath(simnum:int, ul1, ul2, ul3, pathenddate:str, payoutdates:list, payoutobs:list):
     """ Accepts the simulation number, montecarlo sims, end date, payout dates, payoutobservation list
+        Returns payout for [FTSEMIB, HSCEI, NDX]
     """
+    par1=23723.38
+    par2=11079.79
+    par3=8846.449
+    #determine final payoutday
+    payoutdateslist=[]
+    for i in payoutdates:
+        payoutdateslist.append(datetime.datetime.strptime(i,'%m/%d/%Y').date())
+    #one before the first False will be the last date
+    finalpayoutdate=payoutdates[[x < datetime.datetime.strptime(pathenddate,'%m/%d/%Y').date() for x in payoutdateslist].index(False)-1]
+    finalpayoutdate=datetime.datetime.strptime(finalpayoutdate,'%m/%d/%Y').date()
+    
+    #determine final payout period
+    payoutobslist=[]
+    done=False
+    for i in payoutobs:
+        period=[]
+        if done==True:
+            break
+        for x in i:
+            period.append(datetime.datetime.strptime(x,'%m/%d/%Y').date())
+            if datetime.datetime.strptime(x,'%m/%d/%Y').date()>finalpayoutdate:
+                done=True
+                break
+        payoutobslist.append(period)
+    payout1=0
+    payout2=0
+    payout3=0
+    for obsperiod in payoutobslist:
+        payoutn=payoutSinglePeriod(simnum, ul1, ul2, ul3, 'XETR', 'HKEX', 'NYSE', obsperiod[0].strftime("%m/%d/%Y"), obsperiod[1].strftime("%m/%d/%Y"))
+        mult=payoutn[0]/payoutn[1]
+        if obsperiod==payoutobslist[0]:
+            mult=(payoutn[0]+46)/(payoutn[1]+47)
+        payout1+=par1*.068*mult
+        payout2+=par2*.068*mult
+        payout3+=par3*.068*mult
+    print([payout1,payout2,payout3])
+    
+    
+    
     
     
     
@@ -155,7 +195,7 @@ if __name__ == "__main__":
     b2=overrideDates(b, 'HKEX', '3/16/2020', '1/7/2023')
     c2=overrideDates(c, 'NYSE', '3/16/2020', '1/7/2023')
     
-    payoutSinglePeriod(0, a2, b2, c2, 'XETR', 'HKEX', 'NYSE', '3/16/2020', '4/7/2020')
+    payoutSinglePeriod(5, a2, b2, c2, 'XETR', 'HKEX', 'NYSE', '3/16/2020', '4/7/2020')
     
     
     #find the n from January 8 to March 16 out of N
@@ -171,7 +211,7 @@ if __name__ == "__main__":
     print(len(min(FTSEMIB_pre,HSCEI_pre,NDX_pre)))
     
     
-    payoutobsperiod=[['1/7/2020','4/7/2020'], ['4/7/2020','7/7/2020'],['10/7/2020','1/7/2021'],['1/7/2021','4/7/2021'], ['4/7/2021','7/7/2021'],['10/7/2021','1/7/2022'],['1/7/2022','4/7/2022'], ['4/7/2022','7/7/2022'],['10/7/2022','1/9/2023']]
+    payoutobsperiod=[['3/16/2020','4/7/2020'], ['4/7/2020','7/7/2020'],['10/7/2020','1/7/2021'],['1/7/2021','4/7/2021'], ['4/7/2021','7/7/2021'],['10/7/2021','1/7/2022'],['1/7/2022','4/7/2022'], ['4/7/2022','7/7/2022'],['10/7/2022','1/9/2023']]
     payoutdates=['4/14/2020','7/14/2020','10/14/2020','1/14/2021','4/14/2021','7/14/2021','10/14/2021','1/14/2022','4/14/2022','7/14/2022','10/14/2022','1/17/2023']
     
     payoutPath(5, a2, b2, c2, '1/7/2021', payoutdates, payoutobsperiod)
