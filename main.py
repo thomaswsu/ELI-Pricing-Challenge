@@ -1,17 +1,22 @@
-from datetime import date, timedelta
 import datetime
 import investpy
 import pandas
 from matplotlib import pyplot as plt 
-import matplotlib.dates as mdates
-from matplotlib.dates import DateFormatter
-#import pandas_datareader.data as pdr
 import numpy as np
-from scipy import stats
-import math as m
-import time
 import pandas_market_calendars as mcal
 from simulatedNana import * 
+
+def HKDtoUSD(hkd: float) -> float:
+    """
+    https://www.exchange-rates.org/Rate/HKD/USD/1-7-2020
+    """
+    return(hkd * 0.12860)
+
+def EUROtoUSD(euro: float) -> float:
+    """
+    https://www.exchange-rates.org/Rate/USD/EUR/1-7-2020
+    """
+    return(euro * 1.1149514996)
 
 def getFinalRedemption(price1: float, price2: float, price3: float):
 
