@@ -1,12 +1,11 @@
 import pandas
 import pandas_market_calendars as mcal
  
-class simulatedELI(object):
-    def __init__(self, tickerName: str, calendarTicker: str, country: str, interestRate: float, priceHistory: list) -> None:
+class simulatedNana(object):
+    def __init__(self, tickerName: str, calendarTicker: str, country: str, priceHistory: list) -> None:
         self.tickerName = tickerName
         self.calendarTicker = calendarTicker
         self.country = country
-        self.interstRate = interestRate
         self.priceHistory = priceHistory
 
         # generated features
@@ -31,5 +30,5 @@ class simulatedELI(object):
         for indexDay in self.triggerIndexes:
             if self.priceHistory[indexDay] >= self.intialPrice * 0.97:
                 self.triggeredIndexDates.append(indexDay)
-                self.triggerRedemptionDates.append(self.redemptionDates[i])
+                self.triggerRedemptionDates.append(self.observationDates[i])
             i += 1

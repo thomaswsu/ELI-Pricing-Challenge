@@ -200,7 +200,9 @@ def payoutPath(simnum:int, ul1, ul2, ul3, pathenddate:str, payoutdates:list, pay
         payout1+=par1*.068*mult
         payout2+=par2*.068*mult
         payout3+=par3*.068*mult
+        
     return([payout1,payout2,payout3])
+
 
 if __name__ == "__main__":
 
