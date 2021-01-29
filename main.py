@@ -82,7 +82,27 @@ def overrideDates(monteCarloSimulation: pandas.DataFrame, ticker: str, startDate
     #monteCarloSimulation.set_index("date")
     return(monteCarloSimulation)
 
+def allTriggered(ELIs: list, redemptionDate: pandas.DatetimeIndex) ->  bool:
+    allTriggered = False
+    for ELI in ELIs:
+        if not(redemptionDate in ELI.triggerRedemptionDates):
+            return(False)
+        return(True)
 
+def earlyRedeem(ELIs: list, underlying: pandas.DataFrame, startDate: pandas.DatetimeIndex, observationDates: list, redemptionDates: list) -> pandas.DatetimeIndex:
+    """
+    Returns the earliest trigger date (an index not an actual date)
+    """
+    for ELI in ELIs:
+        ELI.setTriggerObservationDates(observationDates)
+        ELI.setObservationDates(redemptionDates)
+        ELI.generateTriggerIndexes(startDate)
+        ELI.getTriggerDates()
+
+    for redemptionDate in ELIs[0].triggerRedemptionDates:
+        if allTriggered(ELIs, redemptionDate):
+            return(redemptionDate)
+    return(-1)
 
 def payoutSinglePeriod(simnum, ul1, ul2, ul3, cal1: str, cal2: str, cal3: str, start, end):
     """returns n/N and prints payout for each underlying between date1 and date2
