@@ -1,4 +1,5 @@
 from datetime import date, timedelta
+import datetime
 import investpy
 import pandas
 from matplotlib import pyplot as plt 
@@ -67,55 +68,6 @@ def monteCarlo(iterations: int, days: int, underlying):
         
     return ul_price_df
 
-def daysAfter(start, end):
-    """ accepts format m/d/y"""
-    start=pandas.to_datetime(start,format= '%m/%d/%Y')
-    end=pandas.to_datetime(end,format='%m/%d/%Y')
-    return (end-start).days
-
-
-def notepath(ul1, ul2, ul3, payoutperiod):
-    """returns in the form of [simulation, payout period, n/N, underlying1 payout, underlying2 payout, underlying 3 payout]
-    
-        accepts monteCarlo simulations and a payout period in the form of days
-        within payout period. ex. [93,90,91,92...]
-    """
-    par1=23723.38
-    par2=11079.79
-    par3=8846.449
-    payoutthreshholdlist=[par1*.7,par2*.7,par3*.7]
-    payoutlist=[]
-    
-    for sim in range(len(ul1.columns)): #for every sim
-        periodcounter=0
-        timeinpayoutperiod=payoutperiod[0]
-        n=0
-        N=0
-        done=False
-        for day in range(len(ul1[sim])): #for every day in sim x
-            if timeinpayoutperiod==0: #end of the period
-                if periodcounter==0:
-                    n=n+46 #hard code the fraction of days before March 16, 2020
-                    N=N+47
-                    noverN=[sim,periodcounter,n/N,par1*.068*n/N,par2*.068*n/N,par3*.068*n/N]
-                else:
-                    noverN=[sim,periodcounter,n/N,par1*.068*n/N,par2*.068*n/N,par3*.068*n/N] #appended information (sim, period#, n/N, total payout)
-                payoutlist.append(noverN)
-                periodcounter+=1 #go to next period
-                if periodcounter>len(payoutperiod)-1: #go to next simulation if we are at end of period
-                    done = True
-                    break
-                timeinpayoutperiod=payoutperiod[periodcounter]
-                n=0
-                N=0
-            if done==True:
-                break
-            daylist=[ul1[sim][day], ul2[sim][day], ul3[sim][day]]
-            n+=1*all(daylist[i] >= payoutthreshholdlist[i] for i in range(len(daylist)))
-            N+=1
-            timeinpayoutperiod-=1
-    return(payoutlist)
-
 
 def overrideDates(monteCarloSimulation: pandas.DataFrame, ticker: str, startDate: str, endDate: str) -> pandas.DataFrame:
     """
@@ -123,6 +75,8 @@ def overrideDates(monteCarloSimulation: pandas.DataFrame, ticker: str, startDate
     """
     calendar = mcal.get_calendar(ticker)
     dates = calendar.schedule(startDate, endDate)
+    if len(monteCarloSimulation)>len(dates):
+        monteCarloSimulation.drop(monteCarloSimulation.tail(len(monteCarloSimulation)-len(dates)).index,inplace=True)
     dates=pandas.to_datetime(dates['market_open']).dt.date.unique().tolist()
     monteCarloSimulation["date"] = dates
     #monteCarloSimulation.set_index("date")
@@ -130,10 +84,12 @@ def overrideDates(monteCarloSimulation: pandas.DataFrame, ticker: str, startDate
 
 
 
-def payoutSinglePath(ul1, ul2, ul3, cal1: str, cal2: str, cal3: str, start, end):
-    """returns payout for each underlying between date1 and date2
+def payoutSinglePeriod(simnum, ul1, ul2, ul3, cal1: str, cal2: str, cal3: str, start, end):
+    """returns n/N and prints payout for each underlying between date1 and date2
+    accepts dates in form m/d/y
     
-        accepts monteCarlo simulations and a payout days
+        accepts simulation number, monteCarlo simulations, calendar names, and 
+        two payout dates
     """
     daterange1=mcal.get_calendar(cal1).schedule(start_date=start, end_date=end)
     daterange2=mcal.get_calendar(cal2).schedule(start_date=start, end_date=end)
@@ -143,58 +99,34 @@ def payoutSinglePath(ul1, ul2, ul3, cal1: str, cal2: str, cal3: str, start, end)
     par1=23723.38
     par2=11079.79
     par3=8846.449
-    payoutthreshholdlist=[par1*.7,par2*.7,par3*.7]
+    payoutthresholdlist=[par1*.7,par2*.7,par3*.7]
     payoutlist=[]
     n=0
     N=0
-    #done=False
-    while not(all(x == end for x in [daterange[0]['market_open'].iloc[0].date(), daterange[1]['market_open'].iloc[0].date(), daterange[2]['market_open'].iloc[0].date()])):
+    while not(all(x == datetime.datetime.strptime(end,'%m/%d/%Y').date() for x in [daterange[0]['market_open'].iloc[0].date(), daterange[1]['market_open'].iloc[0].date(), daterange[2]['market_open'].iloc[0].date()])):
         firstdate = [daterange[0]['market_open'].iloc[0].date(), daterange[1]['market_open'].iloc[0].date(), daterange[2]['market_open'].iloc[0].date()]
         while not(all(x == firstdate[0] for x in firstdate)): #while not all days are the same
             lowestrangeindex = firstdate.index(min(firstdate))
             daterange[lowestrangeindex] = daterange[lowestrangeindex].iloc[1:]
             firstdate = [daterange[0]['market_open'].iloc[0].date(), daterange[1]['market_open'].iloc[0].date(), daterange[2]['market_open'].iloc[0].date()]
-        firstdateprices=[]
-        if 
-        
-            
+        ul1price = ul1[simnum][ul1[ul1['date'] == firstdate[0]].index[0]]
+        ul2price = ul2[simnum][ul2[ul2['date'] == firstdate[1]].index[0]]
+        ul3price = ul3[simnum][ul3[ul3['date'] == firstdate[2]].index[0]]
+        firstdateprices=[ul1price, ul2price, ul3price] 
+        n+=1*all(firstdateprices[i] >= payoutthresholdlist[i] for i in range(len(firstdateprices)))
+        N+=1
+        daterange[0]=daterange[0].iloc[1:]
+        daterange[1]=daterange[1].iloc[1:]
+        daterange[2]=daterange[2].iloc[1:]
+    print([par1*.068*n/N,par3*.068*n/N,par3*.068*n/N])
+    return(n/N)
+
+def payoutPath(simnum:int, ul1, ul2, ul3, pathenddate:str, payoutdates:list, payoutobslist:list):
+    """ Accepts the simulation number, montecarlo sims, end date, payout dates, payoutobservation list
+    """
     
     
     
-    
-    
-    for day in range(len(max(daterange1, daterange2, daterange3))):
-        daylist=[daterange1['market_open'].iloc[day].date(),daterange2['market_open'].iloc[day].date(),daterange3['market_open'].iloc[day].date()]
-        while not(all(x == daylist[0] for x in daylist)):
-            daylist[daylist.index(min(daylist))]=daterange1['market_open'].iloc[day+daycount].date()
-        
-            
-            
-            
-        for day in range(len(ul1)): #for every day in sim x
-            if timeinpayoutperiod==0: #end of the period
-                if periodcounter==0:
-                    n=n+46 #hard code the fraction of days before March 16, 2020
-                    N=N+47
-                    noverN=[sim,periodcounter,n/N,par1*.068*n/N,par2*.068*n/N,par3*.068*n/N]
-                else:
-                    noverN=[sim,periodcounter,n/N,par1*.068*n/N,par2*.068*n/N,par3*.068*n/N] #appended information (sim, period#, n/N, total payout)
-                payoutlist.append(noverN)
-                periodcounter+=1 #go to next period
-                if periodcounter>len(payoutperiod)-1: #go to next simulation if we are at end of period
-                    done = True
-                    break
-                timeinpayoutperiod=payoutperiod[periodcounter]
-                n=0
-                N=0
-            if done==True:
-                break
-            daylist=[ul1[sim][day], ul2[sim][day], ul3[sim][day]]
-            n+=1*all(daylist[i] >= payoutthreshholdlist[i] for i in range(len(daylist)))
-            N+=1
-            timeinpayoutperiod-=1
-    
-    return(payoutlist)
 
 
 if __name__ == "__main__":
@@ -209,70 +141,21 @@ if __name__ == "__main__":
     FTSEMIB = getIndexPrice(ticker="FTSE MIB", country="Italy", startDate=start, endDate=end)
     HSCEI = getIndexPrice(ticker="Hang Seng CEI", country="Hong Kong", startDate=start, endDate=end)
     NDX = getIndexPrice(ticker="Nasdaq 100 ", country="United States", startDate=start, endDate=end)
-        
-    
 
-    # Convert price data to list because I know how to use lists 
-    FTSEMIB_priceList = list(FTSEMIB["Open"])
-    HSCEI_priceList = list(HSCEI["Open"])
-    NDX_priceList = list(NDX["Open"])
-
-    # Get dates for each index
-    FTSEMIB_dates = list(pandas.DatetimeIndex.to_pydatetime(FTSEMIB.index))
-    HSCEI_dates = list(pandas.DatetimeIndex.to_pydatetime(HSCEI.index))
-    NDX_dates = list(pandas.DatetimeIndex.to_pydatetime(NDX.index))
-
-    # Plot FTSEMIB for visual context 
-    fig, ax = plt.subplots()
-
-    # Format xaxis
-    years = mdates.YearLocator()   # every year
-    months = mdates.MonthLocator()  # every month
-    years_fmt = mdates.DateFormatter('%Y')
-
-    plt.plot_date(FTSEMIB_dates, FTSEMIB_priceList, 'b-')
-    formatter = DateFormatter('%m/%d/%y')
-    ax.xaxis.set_major_locator(years)
-    ax.xaxis.set_major_formatter(years_fmt)
-    ax.xaxis.set_minor_locator(months)
-    ax.grid(True)
-
-    # Make best fit line 
-    FTSEMIB_xAxis = range(0, len(FTSEMIB_dates)) # We need this to calculate line of best line 
-    FTSEMIB_m, FTSEMIB_b, FTSEMIB_r_value, FTSEMIB_p_value, FTSEMIB_std_err = stats.linregress(FTSEMIB_xAxis, FTSEMIB_priceList)
-    plt.plot(FTSEMIB_dates, FTSEMIB_m * FTSEMIB_xAxis + FTSEMIB_b)
-    
-    FTSEMIB_std_dev = FTSEMIB_std_err * m.sqrt(len(FTSEMIB_dates))
-
-    # Actually plot
-    #fig.autofmt_xdate()
-    #plt.show()
-
-    # Calculate Standard Deviation of the remaining two assets in portfolio
-    HSCEI_xAxis = range(0, len(HSCEI_dates))
-    HSCEI_m, HSCEI_b, HSCEI_r_value, HSCEI_p_value, HSCEI_std_err = stats.linregress(HSCEI_xAxis, HSCEI_priceList)
-    HSCEI_std_dev = HSCEI_std_err * m.sqrt(len(HSCEI_dates))
-
-    NDX_xAxis = range(0, len(NDX_dates))
-    NDX_m, NDX_b, NDX_r_value, NDX_p_value, NDX_std_err = stats.linregress(NDX_xAxis, NDX_priceList)
-    NDX_std_dev = NDX_std_err * m.sqrt(len(NDX_dates))
-
-    # Print some stats for now
-    print("FTSEMIB Slope: {}, FTSEMIB Standard Deviation: {}".format(FTSEMIB_m, FTSEMIB_std_dev))
-    print("HSCEI Slope: {}, HSCEI Standard Deviation: {}".format(HSCEI_m, HSCEI_std_dev))
-    print("NDX Slope: {}, NDX Standard Deviation: {}".format(NDX_m, NDX_std_dev))
-    
     
     daynum=1030
     simnum=10
     
-    payoutperiod=[daysAfter('3/16/2020', '4/7/2020'), daysAfter('4/7/2020', '7/7/2020'),daysAfter('7/7/2020', '10/7/2020'),daysAfter('10/7/2020', '1/7/2021'),daysAfter('1/7/2021', '4/7/2021'),daysAfter('4/7/2021', '7/7/2021'),daysAfter('7/7/2021', '10/7/2021'),daysAfter('10/7/2021', '1/7/2022'),daysAfter('1/7/2022', '4/7/2022'),daysAfter('4/7/2022', '7/7/2022'),daysAfter('7/7/2022', '10/7/2022'),daysAfter('10/7/2022', '1/9/2023')]
     
     a=monteCarlo(simnum,daynum, FTSEMIB)
     b=monteCarlo(simnum, daynum, HSCEI)
     c=monteCarlo(simnum, daynum, NDX)
     
-    notepath(a,b,c,payoutperiod)
+    a2=overrideDates(a, 'XETR', '3/16/2020', '1/7/2023')
+    b2=overrideDates(b, 'HKEX', '3/16/2020', '1/7/2023')
+    c2=overrideDates(c, 'NYSE', '3/16/2020', '1/7/2023')
+    
+    payoutSinglePeriod(0, a2, b2, c2, 'XETR', 'HKEX', 'NYSE', '3/16/2020', '4/7/2020')
     
     
     #find the n from January 8 to March 16 out of N
@@ -288,6 +171,10 @@ if __name__ == "__main__":
     print(len(min(FTSEMIB_pre,HSCEI_pre,NDX_pre)))
     
     
+    payoutobsperiod=[['1/7/2020','4/7/2020'], ['4/7/2020','7/7/2020'],['10/7/2020','1/7/2021'],['1/7/2021','4/7/2021'], ['4/7/2021','7/7/2021'],['10/7/2021','1/7/2022'],['1/7/2022','4/7/2022'], ['4/7/2022','7/7/2022'],['10/7/2022','1/9/2023']]
+    payoutdates=['4/14/2020','7/14/2020','10/14/2020','1/14/2021','4/14/2021','7/14/2021','10/14/2021','1/14/2022','4/14/2022','7/14/2022','10/14/2022','1/17/2023']
+    
+    payoutPath(5, a2, b2, c2, '1/7/2021', payoutdates, payoutobsperiod)
     
     """fig=plt.figure()
     plt.plot(a)
