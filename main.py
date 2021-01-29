@@ -11,7 +11,7 @@ from scipy import stats
 import math as m
 import time
 import pandas_market_calendars as mcal
-from simulatedELI import * 
+from simulatedNana import * 
 
 
 def getIndexPrice(ticker: str, country: str, startDate: str, endDate: str) -> pandas.DataFrame:
@@ -22,9 +22,6 @@ def getIndexPrice(ticker: str, country: str, startDate: str, endDate: str) -> pa
     getIndexPrice(ticker="Nasdaq 100 ", country="United States", startDate="24/01/2011", endDate="24/01/2021")
     """
     return(investpy.indices.get_index_historical_data(index = ticker, country=country, from_date=startDate, to_date=endDate))
-
-def valueELI(issuePrice: float, intialFixingDate: date, finalFixingDate: date, finalRedemptionDate: date) -> float:
-    return(0)
 
 def oneTSeries(days:int, count: int, daily_vol: int, price: int, tseries):
     "Run a single simulation and returns one simulation 'run'."
@@ -83,25 +80,25 @@ def overrideDates(monteCarloSimulation: pandas.DataFrame, ticker: str, startDate
     #monteCarloSimulation.set_index("date")
     return(monteCarloSimulation)
 
-def allTriggered(ELIs: list, redemptionDate: pandas.DatetimeIndex) ->  bool:
+def allTriggered(Nanas: list, redemptionDate: pandas.DatetimeIndex) ->  bool:
     allTriggered = False
-    for ELI in ELIs:
-        if not(redemptionDate in ELI.triggerRedemptionDates):
+    for Nana in Nanas:
+        if not(redemptionDate in Nana.triggerRedemptionDates):
             return(False)
         return(True)
 
-def earlyRedeem(ELIs: list, startDate: pandas.DatetimeIndex, observationDates: list, redemptionDates: list) -> pandas.DatetimeIndex:
+def earlyRedeem(Nanas: list, startDate: pandas.DatetimeIndex, observationDates: list, redemptionDates: list) -> pandas.DatetimeIndex:
     """
     Returns the earliest trigger date (an index not an actual date)
     """
-    for ELI in ELIs:
-        ELI.setTriggerObservationDates(observationDates)
-        ELI.setObservationDates(redemptionDates)
-        ELI.generateTriggerIndexes(startDate)
-        ELI.getTriggerDates()
+    for Nana in Nanas:
+        Nana.setTriggerObservationDates(observationDates)
+        Nana.setObservationDates(redemptionDates)
+        Nana.generateTriggerIndexes(startDate)
+        Nana.getTriggerDates()
 
-    for redemptionDate in ELIs[0].triggerRedemptionDates:
-        if allTriggered(ELIs, redemptionDate):
+    for redemptionDate in Nanas[0].triggerRedemptionDates:
+        if allTriggered(Nanas, redemptionDate):
             return(redemptionDate)
     return(-1)
 
@@ -233,12 +230,12 @@ if __name__ == "__main__":
     
     redeemedDates = [] 
     for i in range(len(a2.columns) - 1):
-        ELIs = []
-        ELIs.append(simulatedELI("FTSE MIB", "XETR", "Italy", a2[i]))
-        ELIs.append(simulatedELI("Hang Seng CEI", "HKEX", "Hong Kong", b2[i]))
-        ELIs.append(simulatedELI("Nasdaq 100", "NYSE", "United States", c2[i]))
+        Nanas = []
+        Nanas.append(simulatedNana("FTSE MIB", "XETR", "Italy", a2[i]))
+        Nanas.append(simulatedNana("Hang Seng CEI", "HKEX", "Hong Kong", b2[i]))
+        Nanas.append(simulatedNana("Nasdaq 100", "NYSE", "United States", c2[i]))
 
-        redeemedDates.append(earlyRedeem(ELIs, pandas.to_datetime('3/16/2020'), observationDates, redemptionDates))
+        redeemedDates.append(earlyRedeem(Nanas, pandas.to_datetime('3/16/2020'), observationDates, redemptionDates))
 
 
     payoutPath(5, a2, b2, c2, '1/7/2021', payoutdates, payoutobsperiod)

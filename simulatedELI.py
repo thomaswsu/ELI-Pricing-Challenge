@@ -1,7 +1,7 @@
 import pandas
 import pandas_market_calendars as mcal
  
-class simulatedELI(object):
+class simulatedNana(object):
     def __init__(self, tickerName: str, calendarTicker: str, country: str, priceHistory: list) -> None:
         self.tickerName = tickerName
         self.calendarTicker = calendarTicker
