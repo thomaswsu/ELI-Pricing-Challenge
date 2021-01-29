@@ -24,7 +24,7 @@ def getFinalRedemption(price1: float, price2: float, price3: float):
     par=np.array([23723.38,11079.79, 8846.449])
     strike=par*.7
 
-    #if all 3 are above strike, we get all at par
+    #if all 3 are above strike, we return par
     if (finalLevel[0]>strike[0] and finalLevel[1]>strike[1] and finalLevel[2]>par[2]):
         print('all above strike')
         return par
@@ -33,7 +33,7 @@ def getFinalRedemption(price1: float, price2: float, price3: float):
         performance=finalLevel/strike
         worstPerformance=np.min(performance)
 
-        #multiply the Final level by finalLeve(worst)/strike(worst)
+        #return par with finalLeve(worst)/strike(worst)
         return worstPerformance*par
 
 def getIndexPrice(ticker: str, country: str, startDate: str, endDate: str) -> pandas.DataFrame:
