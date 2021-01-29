@@ -34,7 +34,7 @@ def getFinalRedemption(price1: float, price2: float, price3: float):
         worstPerformance=np.min(performance)
 
         #multiply the Final level by finalLeve(worst)/strike(worst)
-        return worstPerformance*finalLevel
+        return worstPerformance*par
 
 def getIndexPrice(ticker: str, country: str, startDate: str, endDate: str) -> pandas.DataFrame:
     """
