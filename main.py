@@ -13,6 +13,23 @@ import time
 import pandas_market_calendars as mcal
 from simulatedNana import * 
 
+def getFinalRedemption(price1: float, price2: float, price3: float):
+
+    finalLevel=np.array([price1,price2,price3])
+    par=np.array([23723.38,11079.79, 8846.449])
+    strike=par*.7
+
+    #if all 3 are above strike, we get all at par
+    if (finalLevel[0]>strike[0] and finalLevel[1]>strike[1] and finalLevel[2]>par[2]):
+        print('all above strike')
+        return par
+    else:
+    #if 1 is below then find the worst performing stock
+        performance=finalLevel/strike
+        worstPerformance=np.min(performance)
+
+        #multiply the Final level by finalLeve(worst)/strike(worst)
+        return worstPerformance*finalLevel
 
 def getIndexPrice(ticker: str, country: str, startDate: str, endDate: str) -> pandas.DataFrame:
     """
@@ -237,8 +254,14 @@ if __name__ == "__main__":
 
         redeemedDates.append(earlyRedeem(Nanas, pandas.to_datetime('3/16/2020'), observationDates, redemptionDates))
 
+    for i in range(len(redeemedDates)):
+        if redeemedDates[i] != -1:
+            print(payoutPath(i, a2, b2, c2, redeemedDates[i], payoutdates, payoutobsperiod))
+        else:
+            print(getFinalRedemption(a2[i][-1:], b2[i][-1:], c2[i][-1:]))
 
-    payoutPath(5, a2, b2, c2, '1/7/2021', payoutdates, payoutobsperiod)
+
+    #payoutPath(5, a2, b2, c2, '1/7/2021', payoutdates, payoutobsperiod)
     
     """fig=plt.figure()
     plt.plot(a)
