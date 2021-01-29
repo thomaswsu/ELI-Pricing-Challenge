@@ -19,27 +19,15 @@ def EUROtoUSD(euro: float) -> float:
     """
     return(euro * 1.1149514996)
 
-def HKDtoUSD(hkd: float) -> float:
-    """
-    https://www.exchange-rates.org/Rate/HKD/USD/1-7-2020
-    """
-    return(hkd * 0.12860)
-
-def EUROtoUSD(euro: float) -> float:
-    """
-    https://www.exchange-rates.org/Rate/USD/EUR/1-7-2020
-    """
-    return(euro * 1.1149514996)
-
 def getFinalRedemption(price1: float, price2: float, price3: float):
-
+    global abovestrikecount
     finalLevel=np.array([price1,price2,price3])
     par=np.array([23723.38,11079.79, 8846.449])
     strike=par*.7
 
     #if all 3 are above strike, we return par
     if (finalLevel[0]>strike[0] and finalLevel[1]>strike[1] and finalLevel[2]>par[2]):
-        print('all above strike')
+        abovestrikecount = 1
         return par
     else:
     #if 1 is below then find the worst performing stock
@@ -225,28 +213,6 @@ def getTriggerDates(simnum, ul1, ul2, ul3, triggerobsdates:list, triggerpayoutda
     
 
 
-def getTriggerDates(simnum, ul1, ul2, ul3, triggerobsdates:list, triggerpayoutdates:list):
-    triggerthreshold=[23011.6786, 10747.3963, 8581.0555]
-    triggerobsdatelist=[]
-    triggerdateindex=-1
-    for i in triggerobsdates:
-        triggerobsdatelist.append(datetime.datetime.strptime(i,'%m/%d/%Y').date())
-    for i in range(len(triggerobsdatelist)):
-        date=triggerobsdatelist[i]
-        ul1price = ul1[simnum][ul1[ul1['date'] == date].index[0]]
-        ul2price = ul2[simnum][ul2[ul3['date'] == date].index[0]]
-        ul3price = ul3[simnum][ul3[ul3['date'] == date].index[0]]
-        pricelist=[ul1price,ul2price,ul3price]
-        if all(pricelist[x] >= triggerthreshold[x] for x in range(len(pricelist))):
-            triggerdateindex=i
-            break
-    if triggerdateindex==-1:
-        return -1
-    else:
-        return triggerpayoutdates[triggerdateindex]
-    
-
-
 if __name__ == "__main__":
 
     start="24/01/2011"
@@ -275,15 +241,11 @@ if __name__ == "__main__":
 
     
 
-
     payoutobsperiod=[['3/16/2020','4/7/2020'], ['4/7/2020','7/7/2020'],['10/7/2020','1/7/2021'],['1/7/2021','4/7/2021'], ['4/7/2021','7/7/2021'],['10/7/2021','1/7/2022'],['1/7/2022','4/7/2022'], ['4/7/2022','7/7/2022'],['10/7/2022','1/9/2023']]
     payoutdates=['4/14/2020','7/14/2020','10/14/2020','1/14/2021','4/14/2021','7/14/2021','10/14/2021','1/14/2022','4/14/2022','7/14/2022','10/14/2022','1/17/2023']
     
     triggerobsdates=['7/7/2020','10/7/2020','1/7/2021','4/7/2021','7/7/2021','10/7/2021','1/7/2022','4/7/2022','7/7/2022','10/7/2022']
     triggerreddates=['7/14/2020','10/14/2020','1/14/2021','4/14/2021','7/14/2021','10/14/2021','1/14/2022','4/14/2022','7/14/2022','10/14/2022']
-    daynum=1030
-    simnum=100
-
     
     daynum=1030
     simnum=1000
@@ -296,53 +258,15 @@ if __name__ == "__main__":
     b2=overrideDates(b, 'HKEX', '3/16/2020', '1/17/2023')
     c2=overrideDates(c, 'NYSE', '3/16/2020', '1/17/2023')
      
+    global abovestrikecount
     
     redeemedDates = [] 
     for i in range(len(a2.columns)-1):
         redeemedDates.append(getTriggerDates(i, a2, b2, c2, triggerobsdates, triggerreddates))
-
-    
-    #find the n from January 8 to March 16 out of N
-    """FTSEMIB_pre = list(getIndexPrice(ticker="FTSE MIB", country="Italy", startDate="8/1/2020", endDate="16/3/2020")["Close"])
-    HSCEI_pre = list(getIndexPrice(ticker="Hang Seng CEI", country="Hong Kong", startDate="8/1/2020", endDate="16/3/2020")["Close"])
-    NDX_pre = list(getIndexPrice(ticker="Nasdaq 100 ", country="United States", startDate="8/1/2020", endDate="16/3/2020")["Close"])
-    payoutthreshholdlist=[23723.38*.7,11079.79*.7,8846.449*.7]
-    n=0
-    for i in range(len(min(FTSEMIB_pre,HSCEI_pre,NDX_pre))):
-        daylist=[FTSEMIB_pre[i],HSCEI_pre[i],NDX_pre[i]]
-        n+=all(daylist[x] >= payoutthreshholdlist[x] for x in range(len(daylist)))     
-    print(n)
-    print(len(min(FTSEMIB_pre,HSCEI_pre,NDX_pre)))"""
-    
-    
-    payoutobsperiod=[['3/16/2020','4/7/2020'], ['4/7/2020','7/7/2020'],['10/7/2020','1/7/2021'],['1/7/2021','4/7/2021'], ['4/7/2021','7/7/2021'],['10/7/2021','1/7/2022'],['1/7/2022','4/7/2022'], ['4/7/2022','7/7/2022'],['10/7/2022','1/9/2023']]
-    payoutdates=['4/14/2020','7/14/2020','10/14/2020','1/14/2021','4/14/2021','7/14/2021','10/14/2021','1/14/2022','4/14/2022','7/14/2022','10/14/2022','1/17/2023']
-    
-    triggerobsdates=['7/7/2020','10/7/2020','1/7/2021','4/7/2021','7/7/2021','10/7/2021','1/7/2022','4/7/2022','7/7/2022','10/7/2022']
-    triggerreddates=['7/14/2020','10/14/2020','1/14/2021','4/14/2021','7/14/2021','10/14/2021','1/14/2022','4/14/2022','7/14/2022','10/14/2022']
-    
-    
-    """ redeemedDates = [] 
-    for i in range(len(a2.columns) - 1):
-        Nanas = []
-        Nanas.append(simulatedNana("FTSE MIB", "XETR", "Italy", a2[i]))
-        Nanas.append(simulatedNana("Hang Seng CEI", "HKEX", "Hong Kong", b2[i]))
-        Nanas.append(simulatedNana("Nasdaq 100", "NYSE", "United States", c2[i]))
-
-        redeemedDates.append(earlyRedeem(Nanas, pandas.to_datetime('3/16/2020'), observationDates, redemptionDates))
-        """
-
-    redeemedDates = [] 
-    for i in range(len(a2.columns)-1):
-        redeemedDates.append(getTriggerDates(i, a2, b2, c2, triggerobsdates, triggerreddates))
-    
-    print(redeemedDates)
-
 
     #to see tests being generated
     for i in range(len(redeemedDates)):
         if redeemedDates[i] != -1:
-
             print("TRIGGER", redeemedDates[i], payoutPath(i, a2, b2, c2, redeemedDates[i], payoutdates, payoutobsperiod, earlyTrig=True))
         else:
             finalredemptionlist=getFinalRedemption(a2[i][a2[a2['date'] == datetime.datetime.strptime('1/9/2023','%m/%d/%Y').date()].index], b2[i][b2[b2['date'] == datetime.datetime.strptime('1/9/2023','%m/%d/%Y').date()].index], c2[i][c2[c2['date'] == datetime.datetime.strptime('1/9/2023','%m/%d/%Y').date()].index])
@@ -352,27 +276,51 @@ if __name__ == "__main__":
     #to create a list of outputs
     outputlist=[]
     for i in range(len(redeemedDates)):
+        print(i)
         if redeemedDates[i] != -1:
-            outputlist.append(payoutPath(i, a2, b2, c2, redeemedDates[i], payoutdates, payoutobsperiod, earlyTrig=True))
+            triggerpricelist=payoutPath(i, a2, b2, c2, redeemedDates[i], payoutdates, payoutobsperiod, earlyTrig=True)
+            triggerpricelist.append(1)
+            triggerpricelist.append(0)#above strike count
+            outputlist.append(triggerpricelist)
         else:
+            abovestrikecount=0
             finalredemptionlist=getFinalRedemption(a2[i][a2[a2['date'] == datetime.datetime.strptime('1/9/2023','%m/%d/%Y').date()].index], b2[i][b2[b2['date'] == datetime.datetime.strptime('1/9/2023','%m/%d/%Y').date()].index], c2[i][c2[c2['date'] == datetime.datetime.strptime('1/9/2023','%m/%d/%Y').date()].index])
             finalpayoutlist=payoutPath(i, a2, b2, c2, '1/17/2023', payoutdates, payoutobsperiod, earlyTrig=False)
-            outputlist.append([finalredemptionlist[i]+finalpayoutlist[i] for i in range(len(finalredemptionlist))])
-    
+            finalpricelist=[finalredemptionlist[i]+finalpayoutlist[i] for i in range(len(finalredemptionlist))]
+            finalpricelist.append(0)
+            if abovestrikecount==1:
+                finalpricelist.append(1)
+            else:
+                finalpricelist.append(0)
+            outputlist.append(finalpricelist)
+            abovestrikecount=0
+            
     print(outputlist)
     
-    outputlist=[1,2,3]
-    with open('file.pkl', 'wb') as pickle_file:
-        pickle.dump(outputlist, pickle_file, protocol=pickle.HIGHEST_PROTOCOL)
-        
-    with open('file.pkl', 'rb') as pickle_load:
-        outputfilesaved = pickle.load(pickle_load)
-        
-    saveddata=outputfilesaved
+    payout1list=[]
+    payout2list=[]
+    payout3list=[]
+    triggered=[]
+    abovestrikecountlist=[]
+    outputdf=pandas.DataFrame({})
+    for simnum in range(len(outputlist)):
+        payout1list.append(outputlist[simnum][0])
+        payout2list.append(outputlist[simnum][1])
+        payout3list.append(outputlist[simnum][2])
+        triggered.append(outputlist[simnum][3])
+        abovestrikecountlist.append(outputlist[simnum][4])
+    outputdf['FTSEMIB payout']=payout1list
+    outputdf['HSCEI payout']=payout2list
+    outputdf['NDX payout']=payout3list
+    outputdf['Triggered']=triggered
+    outputdf['Above Strike Lvl']=abovestrikecountlist
+
+            
+    safestore=outputdf
+    
     
     
     plotsim=0
-
     fig=plt.figure()
     plt.plot(a2[plotsim])
     plt.show()
