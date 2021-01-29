@@ -11,7 +11,25 @@ from scipy import stats
 import math as m
 import time
 import pandas_market_calendars as mcal
+from simulatedNana import * 
 
+def getFinalRedemption(price1: float, price2: float, price3: float):
+
+    finalLevel=np.array([price1,price2,price3])
+    par=np.array([23723.38,11079.79, 8846.449])
+    strike=par*.7
+
+    #if all 3 are above strike, we get all at par
+    if (finalLevel[0]>strike[0] and finalLevel[1]>strike[1] and finalLevel[2]>par[2]):
+        print('all above strike')
+        return par
+    else:
+    #if 1 is below then find the worst performing stock
+        performance=finalLevel/strike
+        worstPerformance=np.min(performance)
+
+        #multiply the Final level by finalLeve(worst)/strike(worst)
+        return worstPerformance*finalLevel
 
 def getIndexPrice(ticker: str, country: str, startDate: str, endDate: str) -> pandas.DataFrame:
     """
@@ -21,9 +39,6 @@ def getIndexPrice(ticker: str, country: str, startDate: str, endDate: str) -> pa
     getIndexPrice(ticker="Nasdaq 100 ", country="United States", startDate="24/01/2011", endDate="24/01/2021")
     """
     return(investpy.indices.get_index_historical_data(index = ticker, country=country, from_date=startDate, to_date=endDate))
-
-def valueELI(issuePrice: float, intialFixingDate: date, finalFixingDate: date, finalRedemptionDate: date) -> float:
-    return(0)
 
 def oneTSeries(days:int, count: int, daily_vol: int, price: int, tseries):
     "Run a single simulation and returns one simulation 'run'."
@@ -82,7 +97,27 @@ def overrideDates(monteCarloSimulation: pandas.DataFrame, ticker: str, startDate
     #monteCarloSimulation.set_index("date")
     return(monteCarloSimulation)
 
+def allTriggered(Nanas: list, redemptionDate: pandas.DatetimeIndex) ->  bool:
+    allTriggered = False
+    for Nana in Nanas:
+        if not(redemptionDate in Nana.triggerRedemptionDates):
+            return(False)
+        return(True)
 
+def earlyRedeem(Nanas: list, startDate: pandas.DatetimeIndex, observationDates: list, redemptionDates: list) -> pandas.DatetimeIndex:
+    """
+    Returns the earliest trigger date (an index not an actual date)
+    """
+    for Nana in Nanas:
+        Nana.setTriggerObservationDates(observationDates)
+        Nana.setObservationDates(redemptionDates)
+        Nana.generateTriggerIndexes(startDate)
+        Nana.getTriggerDates()
+
+    for redemptionDate in Nanas[0].triggerRedemptionDates:
+        if allTriggered(Nanas, redemptionDate):
+            return(redemptionDate)
+    return(-1)
 
 def payoutSinglePeriod(simnum, ul1, ul2, ul3, cal1: str, cal2: str, cal3: str, start, end):
     """returns n/N and prints payout for each underlying between date1 and date2
@@ -161,18 +196,14 @@ def payoutPath(simnum:int, ul1, ul2, ul3, pathenddate:str, payoutdates:list, pay
         payout2+=par2*.068*mult
         payout3+=par3*.068*mult
     print([payout1,payout2,payout3])
-    
-    
-    
-    
-    
-    
-
 
 if __name__ == "__main__":
 
     start="24/01/2011"
     end="16/03/2020"
+    
+    observationDates = ["7/7/2020", "10/7/2020", "1/7/2021", "4/7/2021", "7/7/2021", "10/7/2021", "1/7/2022", "4/7/2022", "7/7/2022", "10/7/2022"]
+    redemptionDates = ["7/14/2020", "10/14/2020", "1/14/2021", "4/14/2021", "7/14/2021", "10/14/2021", "1/14/2022", "4/14/2022", "7/14/2022", "10/14/2022"]
     
 
 
@@ -180,7 +211,7 @@ if __name__ == "__main__":
     
     FTSEMIB = getIndexPrice(ticker="FTSE MIB", country="Italy", startDate=start, endDate=end)
     HSCEI = getIndexPrice(ticker="Hang Seng CEI", country="Hong Kong", startDate=start, endDate=end)
-    NDX = getIndexPrice(ticker="Nasdaq 100 ", country="United States", startDate=start, endDate=end)
+    NDX = getIndexPrice(ticker="Nasdaq 100", country="United States", startDate=start, endDate=end)
 
     
     daynum=1030
@@ -214,7 +245,23 @@ if __name__ == "__main__":
     payoutobsperiod=[['3/16/2020','4/7/2020'], ['4/7/2020','7/7/2020'],['10/7/2020','1/7/2021'],['1/7/2021','4/7/2021'], ['4/7/2021','7/7/2021'],['10/7/2021','1/7/2022'],['1/7/2022','4/7/2022'], ['4/7/2022','7/7/2022'],['10/7/2022','1/9/2023']]
     payoutdates=['4/14/2020','7/14/2020','10/14/2020','1/14/2021','4/14/2021','7/14/2021','10/14/2021','1/14/2022','4/14/2022','7/14/2022','10/14/2022','1/17/2023']
     
-    payoutPath(5, a2, b2, c2, '1/7/2021', payoutdates, payoutobsperiod)
+    redeemedDates = [] 
+    for i in range(len(a2.columns) - 1):
+        Nanas = []
+        Nanas.append(simulatedNana("FTSE MIB", "XETR", "Italy", a2[i]))
+        Nanas.append(simulatedNana("Hang Seng CEI", "HKEX", "Hong Kong", b2[i]))
+        Nanas.append(simulatedNana("Nasdaq 100", "NYSE", "United States", c2[i]))
+
+        redeemedDates.append(earlyRedeem(Nanas, pandas.to_datetime('3/16/2020'), observationDates, redemptionDates))
+
+    for i in range(len(redeemedDates)):
+        if redeemedDates[i] != -1:
+            print(payoutPath(i, a2, b2, c2, redeemedDates[i], payoutdates, payoutobsperiod))
+        else:
+            print(getFinalRedemption(a2[i][-1:], b2[i][-1:], c2[i][-1:]))
+
+
+    #payoutPath(5, a2, b2, c2, '1/7/2021', payoutdates, payoutobsperiod)
     
     """fig=plt.figure()
     plt.plot(a)
