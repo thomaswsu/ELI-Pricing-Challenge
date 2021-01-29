@@ -1,5 +1,6 @@
 import datetime
 import investpy
+from numpy.lib.function_base import average
 import pandas
 from matplotlib import pyplot as plt 
 import numpy as np
@@ -220,6 +221,16 @@ def convertEUROtoUSD(payoutlist: list) -> list:
         payoutlist[i] = EUROtoUSD(payoutlist[i])
     return(payoutlist)
 
+def calculateAveragePayout(df: pandas.DataFrame) -> float:
+    total = 0
+
+    for index in df.index:
+        total += HKDtoUSD(df['FTSEMIB payout'][index])
+        total += EUROtoUSD(df['HSCEI payout'][index]) 
+        total += df['NDX payout'][index]
+    
+    return(round(total / df.shape[0], 2))
+
 if __name__ == "__main__":
 
     start="24/01/2011"
@@ -302,11 +313,13 @@ if __name__ == "__main__":
         payout3list.append(outputlist[simnum][2])
         triggered.append(outputlist[simnum][3])
         abovestrikecountlist.append(outputlist[simnum][4])
-    outputdf['FTSEMIB payout']= convertEUROtoUSD(payout1list) 
-    outputdf['HSCEI payout']=convertHKDtoUSD(payout2list) 
+    outputdf['FTSEMIB payout']= payout1list
+    outputdf['HSCEI payout']=payout2list
     outputdf['NDX payout']=payout3list
     outputdf['Triggered']=triggered
     outputdf['Above Strike Lvl']=abovestrikecountlist
+
+    print(calculateAveragePayout(outputdf))
             
     safestore=outputdf
     
