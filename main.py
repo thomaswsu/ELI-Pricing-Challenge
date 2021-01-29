@@ -11,6 +11,7 @@ from scipy import stats
 import math as m
 import time
 import pandas_market_calendars as mcal
+from simulatedELI import * 
 
 
 def getIndexPrice(ticker: str, country: str, startDate: str, endDate: str) -> pandas.DataFrame:
@@ -89,7 +90,7 @@ def allTriggered(ELIs: list, redemptionDate: pandas.DatetimeIndex) ->  bool:
             return(False)
         return(True)
 
-def earlyRedeem(ELIs: list, underlying: pandas.DataFrame, startDate: pandas.DatetimeIndex, observationDates: list, redemptionDates: list) -> pandas.DatetimeIndex:
+def earlyRedeem(ELIs: list, startDate: pandas.DatetimeIndex, observationDates: list, redemptionDates: list) -> pandas.DatetimeIndex:
     """
     Returns the earliest trigger date (an index not an actual date)
     """
@@ -181,18 +182,14 @@ def payoutPath(simnum:int, ul1, ul2, ul3, pathenddate:str, payoutdates:list, pay
         payout2+=par2*.068*mult
         payout3+=par3*.068*mult
     print([payout1,payout2,payout3])
-    
-    
-    
-    
-    
-    
-
 
 if __name__ == "__main__":
 
     start="24/01/2011"
     end="16/03/2020"
+    
+    observationDates = ["7/7/2020", "10/7/2020", "1/7/2021", "4/7/2021", "7/7/2021", "10/7/2021", "1/7/2022", "4/7/2022", "7/7/2022", "10/7/2022"]
+    redemptionDates = ["7/14/2020", "10/14/2020", "1/14/2021", "4/14/2021", "7/14/2021", "10/14/2021", "1/14/2022", "4/14/2022", "7/14/2022", "10/14/2022"]
     
 
 
@@ -200,7 +197,7 @@ if __name__ == "__main__":
     
     FTSEMIB = getIndexPrice(ticker="FTSE MIB", country="Italy", startDate=start, endDate=end)
     HSCEI = getIndexPrice(ticker="Hang Seng CEI", country="Hong Kong", startDate=start, endDate=end)
-    NDX = getIndexPrice(ticker="Nasdaq 100 ", country="United States", startDate=start, endDate=end)
+    NDX = getIndexPrice(ticker="Nasdaq 100", country="United States", startDate=start, endDate=end)
 
     
     daynum=1030
@@ -234,6 +231,16 @@ if __name__ == "__main__":
     payoutobsperiod=[['3/16/2020','4/7/2020'], ['4/7/2020','7/7/2020'],['10/7/2020','1/7/2021'],['1/7/2021','4/7/2021'], ['4/7/2021','7/7/2021'],['10/7/2021','1/7/2022'],['1/7/2022','4/7/2022'], ['4/7/2022','7/7/2022'],['10/7/2022','1/9/2023']]
     payoutdates=['4/14/2020','7/14/2020','10/14/2020','1/14/2021','4/14/2021','7/14/2021','10/14/2021','1/14/2022','4/14/2022','7/14/2022','10/14/2022','1/17/2023']
     
+    redeemedDates = [] 
+    for i in range(len(a2.columns) - 1):
+        ELIs = []
+        ELIs.append(simulatedELI("FTSE MIB", "XETR", "Italy", a2[i]))
+        ELIs.append(simulatedELI("Hang Seng CEI", "HKEX", "Hong Kong", b2[i]))
+        ELIs.append(simulatedELI("Nasdaq 100", "NYSE", "United States", c2[i]))
+
+        redeemedDates.append(earlyRedeem(ELIs, pandas.to_datetime('3/16/2020'), observationDates, redemptionDates))
+
+
     payoutPath(5, a2, b2, c2, '1/7/2021', payoutdates, payoutobsperiod)
     
     """fig=plt.figure()
